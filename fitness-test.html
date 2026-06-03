@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Co právě teď tvé tělo potřebuje?</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --primary: #1a1a2e; --accent: #e94560; --accent2: #0f7d73; --bg: #f7f6f2; --card: #ffffff; --text: #1a1a2e; --text-muted: #6b6b80; --border: rgba(0,0,0,0.1); --selected-bg: #e8f5f3; --selected-border: #0f7d73; --radius: 14px; --radius-sm: 8px; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem 4rem; }
+  .page { max-width: 680px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 2.5rem; padding: 2.5rem 2rem; background: var(--primary); border-radius: var(--radius); position: relative; overflow: hidden; }
+  .header::before { content: ''; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; border-radius: 50%; background: rgba(233,69,96,0.15); }
+  .header::after { content: ''; position: absolute; bottom: -30px; left: -30px; width: 130px; height: 130px; border-radius: 50%; background: rgba(15,125,115,0.15); }
+  .header-icon { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+  .header h1 { font-size: 1.6rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 4px; position: relative; z-index: 1; }
+  .header .subtitle { font-size: 0.9rem; color: rgba(255,255,255,0.6); font-style: italic; position: relative; z-index: 1; }
+  .instructions { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items: flex-start; }
+  .instr-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 2px; }
+  .instr-cs { font-size: 0.9rem; color: var(--text); line-height: 1.7; margin-bottom: 6px; }
+  .instr-en { font-size: 0.82rem; color: var(--text-muted); font-style: italic; line-height: 1.6; }
+  .progress-wrap { margin-bottom: 2rem; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; }
+  .progress-bar { height: 5px; background: rgba(0,0,0,0.08); border-radius: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 10px; transition: width 0.35s ease; width: 0%; }
+  .question-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.25rem; }
+  .question-card.answered { border-color: rgba(15,125,115,0.3); }
+  .q-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 0.75rem; }
+  .q-num { background: var(--primary); color: #fff; font-size: 0.7rem; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .q-num.done { background: var(--accent2); }
+  .q-cs { font-size: 1rem; font-weight: 600; color: var(--text); line-height: 1.4; margin-bottom: 3px; }
+  .q-en { font-size: 0.82rem; color: var(--text-muted); font-style: italic; margin-bottom: 1rem; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .option { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); cursor: pointer; background: #fafafa; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .option.selected { background: var(--selected-bg); border-color: var(--selected-border); }
+  .opt-letter { width: 26px; height: 26px; border-radius: 50%; background: rgba(0,0,0,0.06); color: var(--text-muted); font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .option.selected .opt-letter { background: var(--accent2); color: #fff; }
+  .opt-text .cs { font-size: 0.9rem; color: var(--text); line-height: 1.4; }
+  .opt-text .en { font-size: 0.78rem; color: var(--text-muted); font-style: italic; margin-top: 2px; }
+  .option.selected .opt-text .cs { color: #0a5c55; }
+  .warning { font-size: 0.8rem; color: var(--accent); margin-top: 8px; display: none; padding-left: 4px; }
+  .submit-wrap { text-align: center; margin: 2rem 0; }
+  .submit-btn { padding: 14px 40px; font-size: 1rem; font-weight: 600; background: #ccc; color: #fff; border: none; border-radius: 50px; cursor: default; letter-spacing: 0.01em; -webkit-tap-highlight-color: transparent; }
+  .submit-btn.ready { background: var(--primary); cursor: pointer; }
+  .submit-btn.ready:hover { background: #2d2d50; }
+  .submit-hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; }
+  .result-card { display: none; background: var(--primary); border-radius: var(--radius); padding: 2rem; color: #fff; margin-top: 1.5rem; position: relative; overflow: hidden; }
+  .result-card::before { content: ''; position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; border-radius: 50%; background: rgba(233,69,96,0.1); }
+  .result-card.show { display: block; }
+  .result-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-bottom: 0.75rem; }
+  .tally-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; position: relative; z-index: 1; }
+  .tally-badge { padding: 4px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
+  .tally-badge.winner { background: var(--accent2); color: #fff; }
+
+  /* Single result */
+  .result-cta { font-size: 1.3rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; line-height: 1.3; position: relative; z-index: 1; }
+  .result-cta-en { font-size: 0.9rem; color: rgba(255,255,255,0.5); font-style: italic; margin-bottom: 1rem; position: relative; z-index: 1; }
+  .result-icon { font-size: 1.6rem; display: inline; margin-right: 6px; }
+  .result-schedule { background: rgba(15,125,115,0.25); border: 1px solid rgba(15,125,115,0.45); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 0.85rem; color: rgba(255,255,255,0.9); line-height: 1.7; position: relative; z-index: 1; margin-bottom: 1rem; }
+  .result-schedule .sch-label { font-weight: 700; color: #fff; display: block; margin-bottom: 4px; }
+  .result-schedule .sch-en { font-size: 0.78rem; color: rgba(255,255,255,0.5); font-style: italic; }
+  .result-desc-cs { font-size: 0.92rem; color: rgba(255,255,255,0.88); line-height: 1.7; margin-bottom: 0.5rem; position: relative; z-index: 1; }
+  .result-desc-en { font-size: 0.82rem; color: rgba(255,255,255,0.48); font-style: italic; line-height: 1.6; margin-bottom: 1rem; position: relative; z-index: 1; }
+  .result-benefit { background: rgba(255,255,255,0.07); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 0.85rem; color: rgba(255,255,255,0.75); line-height: 1.6; position: relative; z-index: 1; }
+  .result-benefit strong { color: #fff; display: block; margin-bottom: 2px; }
+
+  /* Tie */
+  .tie-intro { font-size: 0.88rem; color: rgba(255,255,255,0.65); line-height: 1.6; margin-bottom: 1.25rem; position: relative; z-index: 1; }
+  .tie-intro em { color: rgba(255,255,255,0.4); font-size: 0.8rem; }
+  .tie-options { display: flex; flex-direction: column; gap: 1rem; position: relative; z-index: 1; }
+  .tie-option { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.13); border-radius: var(--radius-sm); padding: 1.1rem 1.25rem; }
+  .tie-cta { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .tie-cta-en { font-size: 0.8rem; color: rgba(255,255,255,0.45); font-style: italic; margin-bottom: 0.75rem; }
+  .tie-schedule { background: rgba(15,125,115,0.22); border: 1px solid rgba(15,125,115,0.38); border-radius: 6px; padding: 9px 12px; font-size: 0.82rem; color: rgba(255,255,255,0.88); line-height: 1.6; margin-bottom: 0.75rem; }
+  .tie-schedule .sch-label { font-weight: 700; color: #fff; display: block; margin-bottom: 3px; }
+  .tie-schedule .sch-en { font-size: 0.75rem; color: rgba(255,255,255,0.48); font-style: italic; }
+  .tie-desc-cs { font-size: 0.88rem; color: rgba(255,255,255,0.85); line-height: 1.6; margin-bottom: 0.3rem; }
+  .tie-desc-en { font-size: 0.78rem; color: rgba(255,255,255,0.43); font-style: italic; line-height: 1.5; margin-bottom: 0.6rem; }
+  .tie-benefit { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: rgba(255,255,255,0.65); }
+
+  .restart-btn { margin-top: 1.5rem; width: 100%; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50px; color: rgba(255,255,255,0.8); font-size: 0.9rem; cursor: pointer; position: relative; z-index: 1; }
+  .restart-btn:hover { background: rgba(255,255,255,0.18); }
+  .footer { text-align: center; margin-top: 3rem; font-size: 0.78rem; color: var(--text-muted); }
+  @media (max-width: 500px) { .header h1 { font-size: 1.3rem; } .question-card { padding: 1.1rem; } .result-cta { font-size: 1.1rem; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <span class="header-icon">🏋️</span>
+    <h1>Co právě teď tvé tělo potřebuje?</h1>
+    <p class="subtitle">What Does Your Body Need Right Now?</p>
+  </div>
+  <div class="instructions">
+    <span class="instr-icon">💡</span>
+    <div>
+      <p class="instr-cs">Víme, že začít cvičit nebo najít správnou aktivitu není vždy jednoduché. Proto jsme pro tebe připravili tento krátký test – pomůže ti zjistit, která z našich lekcí by ti mohla nejvíc sednout. Stačí 5 otázek.<br><br>U každé otázky vyber odpověď, která ti sedí nejlépe. Pokud váháš mezi dvěma, klidně označ obě. Na konci uvidíš, co z námi nabízených aktivit bude pro tebe nejvhodnější.</p>
+      <p class="instr-en">We know that starting to exercise or finding the right activity isn't always easy. That's why we've put together this short quiz – to help you find the class that could suit you best. Just 5 questions.<br><br>For each question, pick the answer that fits you best. If you're torn between two, feel free to select both. At the end, you'll see which of our activities suits you most.</p>
+    </div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span id="progressLabel">0 z 5 otázek / 0 of 5 questions</span>
+      <span id="progressPct">0 %</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+  <div id="questions"></div>
+  <div class="submit-wrap">
+    <button class="submit-btn" id="submitBtn">Zjistit výsledek / See my result →</button>
+    <p class="submit-hint" id="submitHint">Nejprve odpověz na všechny otázky / Answer all questions first</p>
+  </div>
+  <div class="result-card" id="resultCard">
+    <p class="result-label">Tvůj výsledek / Your result</p>
+    <div class="tally-row" id="tallyRow"></div>
+    <div id="resultBody"></div>
+    <button class="restart-btn" id="restartBtn">↺ Zkusit znovu / Try again</button>
+  </div>
+  <div class="footer">Vytvořeno pro SCS Software s.r.o. &nbsp;·&nbsp; Fitness test 2025</div>
+</div>
+<script>
+const questions = [
+  { cs: "Jak se nejčastěji cítíš po pracovním dni?", en: "How do you usually feel after a workday?", options: [
+    { l: "A", cs: "Jsem ztuhlý/á a potřeboval/a bych se protáhnout", en: "I feel stiff and need a good stretch" },
+    { l: "B", cs: "Bolí mě záda nebo cítím oslabený střed těla", en: "I have back pain or feel that my core is weak" },
+    { l: "C", cs: "Mám energii, ale chci být silnější", en: "I have energy, but I want to get stronger" },
+    { l: "D", cs: "Potřebuji vypnout hlavu a odbourat stres", en: "I need to clear my head and relieve stress" },
+    { l: "E", cs: "Chci se naučit něco nového a posunout své schopnosti", en: "I want to learn something new and improve my skills" }
+  ]},
+  { cs: "Co by ti udělalo největší radost?", en: "What would make you happiest right now?", options: [
+    { l: "A", cs: "Volnější a plynulejší pohyb – uvolněné kyčle, ramena a záda", en: "More flexible hips, shoulders, and back – a feeling of ease" },
+    { l: "B", cs: "Lepší držení těla a méně bolesti", en: "Better posture and less pain" },
+    { l: "C", cs: "Více síly v běžném životě i sportu", en: "More strength for everyday life and sports" },
+    { l: "D", cs: "Lepší soustředění a psychická pohoda", en: "Better focus and mental wellbeing" },
+    { l: "E", cs: "Ovládnout novou techniku nebo pohybovou dovednost", en: "To master a new technique or movement skill" }
+  ]},
+  { cs: "Které tvrzení s tebou teď nejvíc rezonuje?", en: "Which statement resonates with you most right now?", options: [
+    { l: "A", cs: "Celý den převážně sedím a potřebuji rozhýbat tělo", en: "I sit most of the day and my body needs to move" },
+    { l: "B", cs: "Chci předcházet problémům se zády", en: "I want to prevent back problems before they start" },
+    { l: "C", cs: "Baví mě trénovat a zlepšovat svůj výkon", en: "I love training and pushing my performance" },
+    { l: "D", cs: "Potřebuji pravidelně vypnout a zpomalit", en: "I need to regularly switch off and slow down" },
+    { l: "E", cs: "Rád/a zkouším nové výzvy a pohybové disciplíny", en: "I love trying new challenges and movement disciplines" }
+  ]},
+  { cs: "Jaký typ pohybu ti bývá nejpříjemnější?", en: "What kind of movement do you enjoy most?", options: [
+    { l: "A", cs: "Plynulý, protahovací, uvědomělý pohyb", en: "Fluid, stretching, mindful movement" },
+    { l: "B", cs: "Jemný, kontrolovaný, technicky precizní", en: "Gentle, controlled, technically precise" },
+    { l: "C", cs: "Dynamický a silový trénink", en: "Dynamic and strength-based training" },
+    { l: "D", cs: "Pohyb propojený s dechem a zklidněním", en: "Movement connected to breath and relaxation" },
+    { l: "E", cs: "Kombinace techniky, síly a koordinace", en: "A mix of technique, strength, and coordination" }
+  ]},
+  { cs: "Co bys chtěl/a získat za tři měsíce pravidelného cvičení?", en: "What would you love to achieve after three months of regular exercise?", options: [
+    { l: "A", cs: "Větší flexibilitu a mobilitu – pohybovat se bez omezení", en: "Greater flexibility and mobility – moving freely without restriction" },
+    { l: "B", cs: "Silnější střed těla a zdravější záda", en: "A stronger core and healthier back" },
+    { l: "C", cs: "Lepší kondici, více svalové síly a hmoty", en: "Better fitness, more muscle strength and mass" },
+    { l: "D", cs: "Klidnější mysl a více energie do každého dne", en: "A calmer mind and more energy every day" },
+    { l: "E", cs: "Nové pohybové dovednosti a větší sebevědomí", en: "New movement skills and greater confidence" }
+  ]}
+];
+
+const results = {
+  A: {
+    icon: "🤸‍♀️",
+    ctaCs: "Zajdi na Jógu nebo Stretch & Foamrollers",
+    ctaEn: "Join us for Yoga or Stretch & Foam Rollers",
+    scheduleCs: "Jóga: pondělí 9:00 · středa 9:00 · čtvrtek 9:00\nFoamrollers: pondělí 15:30 · pátek 15:00",
+    scheduleEn: "Yoga: Monday 9:00 · Wednesday 9:00 · Thursday 9:00\nFoam Rollers: Monday 15:30 · Friday 15:00",
+    descCs: "Tvoje tělo si říká o více mobility a regenerace. Jóga pomůže propojit sílu, flexibilitu a dech. Stretch & Foamrollers uvolní přetížené svaly, zlepší rozsah pohybu a podpoří regeneraci.",
+    descEn: "Your body is calling for more mobility and recovery. Yoga connects strength, flexibility, and breath. Stretch & Foam Rollers release tired muscles, improve range of motion, and support recovery.",
+    benefitCs: "Menší ztuhlost, lepší pohyblivost, kvalitnější regenerace",
+    benefitEn: "Less stiffness, better mobility, improved recovery"
+  },
+  B: {
+    icon: "🏋️‍♀️",
+    ctaCs: "Zajdi na Zdravá záda nebo TRX",
+    ctaEn: "Join us for Healthy Back or TRX",
+    scheduleCs: "Zdravá záda: středa 9:00 · TRX: středa 10:00",
+    scheduleEn: "Healthy Back: Wednesday 9:00 · TRX: Wednesday 10:00",
+    descCs: "Dlouhé sezení a jednostranná zátěž si vybírají svou daň. Lekce Zdravá záda posiluje hluboký stabilizační systém, zlepšuje držení těla a pomáhá předcházet bolestem. TRX využívá závěsné popruhy k posílení celého těla s důrazem na stabilizaci páteře – ideální doplněk pro zdravá záda a pevný střed těla.",
+    descEn: "Long hours of sitting and repetitive strain take their toll. The Healthy Back class strengthens your deep stabilizing muscles, improves posture, and helps prevent pain. TRX uses suspension straps to strengthen the whole body with an emphasis on spinal stabilization – ideal for a healthy back and strong core.",
+    benefitCs: "Stabilnější střed těla, zdravější záda, lepší držení těla",
+    benefitEn: "Stronger core, healthier back, better posture"
+  },
+  C: {
+    icon: "💪",
+    ctaCs: "Zajdi na Silový trénink nebo Funkční silový trénink",
+    ctaEn: "Join us for Strength Training or Functional Strength Training",
+    scheduleCs: "Pondělí 9:00 · Úterý 15:00 · Středa 8:00, 9:00, 11:00 · Čtvrtek 9:00, 10:00, 15:00",
+    scheduleEn: "Monday 9:00 · Tuesday 15:00 · Wednesday 8:00, 9:00, 11:00 · Thursday 9:00, 10:00, 15:00",
+    descCs: "Chceš být silnější a odolnější. Klasický silový trénink rozvíjí celé tělo. Funkční silový trénink klade větší důraz na techniku, kontrolu pohybu a efektivní budování síly.",
+    descEn: "You want to be stronger and more resilient. Classic strength training develops the whole body. Functional strength training focuses on technique, movement control, and building strength efficiently.",
+    benefitCs: "Síla, pevnost těla, prevence zranění, lepší výkon ve sportu i běžném životě",
+    benefitEn: "Strength, body stability, injury prevention, better performance in sport and daily life"
+  },
+  D: {
+    icon: "🧘",
+    ctaCs: "Zajdi na Jógu",
+    ctaEn: "Join us for Yoga",
+    scheduleCs: "Pondělí 9:00 · Středa 9:00 · Čtvrtek 9:00",
+    scheduleEn: "Monday 9:00 · Wednesday 9:00 · Thursday 9:00",
+    descCs: "Potřebuješ zpomalit a dobít energii. Jóga propojuje pohyb s dechem a pomáhá snížit stres, zlepšit koncentraci a celkovou psychickou pohodu.",
+    descEn: "You need to slow down and recharge. Yoga connects movement with breath and helps reduce stress, sharpen focus, and improve overall mental wellbeing.",
+    benefitCs: "Lepší zvládání stresu, kvalitnější spánek, větší vnitřní klid",
+    benefitEn: "Better stress management, improved sleep, inner calm"
+  },
+  E: {
+    icon: "🤼‍♀️",
+    ctaCs: "Zajdi na Self-Defense nebo Kalisteniku",
+    ctaEn: "Join us for Self-Defense or Calisthenics",
+    scheduleCs: "Kalistenika: 9:00 · Sebeobrana: 13:00 a 14:00",
+    scheduleEn: "Calisthenics: 9:00 · Self-Defense: 13:00 and 14:00",
+    descCs: "Baví tě nové výzvy a rozvoj dovedností. Self-defense nabízí techniku, koordinaci i možnost bezpečně vybít energii. Kalistenika rozvíjí dynamickou sílu, kontrolu těla a pohybové schopnosti pomocí vlastní váhy.",
+    descEn: "You love new challenges and developing skills. Self-defense offers technique, coordination, and a safe outlet for energy. Calisthenics builds dynamic strength, body control, and movement skills using your own bodyweight.",
+    benefitCs: "Koordinace, sebevědomí, síla a nové pohybové dovednosti",
+    benefitEn: "Coordination, confidence, strength, new movement skills"
+  },
+  mixed: {
+    icon: "⭐",
+    ctaCs: "Zajdi na Basic & Core Training",
+    ctaEn: "Join us for Basic & Core Training",
+    scheduleCs: "Pondělí 9:00 · Úterý 15:00 · Středa 8:00, 9:00, 11:00 · Čtvrtek 9:00, 10:00, 15:00",
+    scheduleEn: "Monday 9:00 · Tuesday 15:00 · Wednesday 8:00, 9:00, 11:00 · Thursday 9:00, 10:00, 15:00",
+    descCs: "Tvoje odpovědi jsou hodně různorodé – a to je skvělé znamení! Basic & Core Training je vhodný téměř pro každého – od začátečníků po zkušené sportovce. Posílí střed těla, zlepší stabilitu a vytvoří pevný základ pro běh, cyklistiku, bojové sporty i běžný život.",
+    descEn: "Your answers are wonderfully varied – that's a great sign! Basic & Core Training suits almost everyone – from beginners to experienced athletes. It strengthens your core, improves stability, and builds a solid foundation for running, cycling, combat sports, and everyday life.",
+    benefitCs: "Univerzální rozvoj síly, stability a kondice",
+    benefitEn: "All-round strength, stability, and fitness"
+  }
+};
+
+function buildSingleResult(key) {
+  var r = results[key];
+  return '<div>'
+    + '<div class="result-cta"><span class="result-icon">' + r.icon + '</span>' + r.ctaCs + '</div>'
+    + '<div class="result-cta-en">' + r.ctaEn + '</div>'
+    + '<div class="result-schedule"><span class="sch-label">📅 Termín lekce / Class schedule:</span>' + r.scheduleCs.replace(/\n/g,'<br>') + '<br><span class="sch-en">' + r.scheduleEn.replace(/\n/g,'<br>') + '</span></div>'
+    + '<div class="result-desc-cs">' + r.descCs + '</div>'
+    + '<div class="result-desc-en">' + r.descEn + '</div>'
+    + '<div class="result-benefit"><strong>Přínos / Benefit:</strong> ' + r.benefitCs + '<br><em style="color:rgba(255,255,255,0.45)">' + r.benefitEn + '</em></div>'
+    + '</div>';
+}
+
+function buildTieResult(keys) {
+  var html = '<div class="tie-intro">Tvoje odpovědi jsou rovnoměrně rozděleny mezi dvě aktivity – obě by ti mohly sednout. Prohlédni si je a vyber tu, která tě osloví více.<br><em>Your answers are evenly split between two activities – both could suit you well. Take a look and choose the one that speaks to you more.</em></div>';
+  html += '<div class="tie-options">';
+  for (var i = 0; i < keys.length; i++) {
+    var r = results[keys[i]];
+    html += '<div class="tie-option">'
+      + '<div class="tie-cta"><span style="margin-right:6px">' + r.icon + '</span>' + r.ctaCs + '</div>'
+      + '<div class="tie-cta-en">' + r.ctaEn + '</div>'
+      + '<div class="tie-schedule"><span class="sch-label">📅 Termín lekce / Class schedule:</span>' + r.scheduleCs.replace(/\n/g,'<br>') + '<br><span class="sch-en">' + r.scheduleEn.replace(/\n/g,'<br>') + '</span></div>'
+      + '<div class="tie-desc-cs">' + r.descCs + '</div>'
+      + '<div class="tie-desc-en">' + r.descEn + '</div>'
+      + '<div class="tie-benefit"><strong>Přínos / Benefit:</strong> ' + r.benefitCs + ' · <em>' + r.benefitEn + '</em></div>'
+      + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+const answers = {};
+
+function renderQuestions() {
+  var container = document.getElementById('questions');
+  container.innerHTML = '';
+  for (var qi = 0; qi < questions.length; qi++) {
+    var q = questions[qi];
+    var card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = 'card-' + qi;
+    var optHtml = '';
+    for (var oi = 0; oi < q.options.length; oi++) {
+      var o = q.options[oi];
+      optHtml += '<div class="option" data-qi="' + qi + '" data-l="' + o.l + '"><span class="opt-letter">' + o.l + '</span><div class="opt-text"><div class="cs">' + o.cs + '</div><div class="en">' + o.en + '</div></div></div>';
+    }
+    card.innerHTML = '<div class="q-meta"><div class="q-num" id="qnum-' + qi + '">' + (qi+1) + '</div><div><div class="q-cs">' + q.cs + '</div><div class="q-en">' + q.en + '</div></div></div><div class="options">' + optHtml + '</div><div class="warning" id="warn-' + qi + '">⚠ Vyber prosím alespoň jednu odpověď / Please select at least one answer</div>';
+    container.appendChild(card);
+  }
+  document.getElementById('questions').addEventListener('click', function(e) {
+    var opt = e.target.closest('.option');
+    if (!opt) return;
+    var qi = parseInt(opt.getAttribute('data-qi'));
+    var l = opt.getAttribute('data-l');
+    if (!answers[qi]) answers[qi] = new Set();
+    if (answers[qi].has(l)) { answers[qi].delete(l); opt.classList.remove('selected'); }
+    else { answers[qi].add(l); opt.classList.add('selected'); }
+    if (answers[qi].size === 0) delete answers[qi];
+    var numEl = document.getElementById('qnum-' + qi);
+    var card = document.getElementById('card-' + qi);
+    if (answers[qi] && answers[qi].size > 0) { numEl.classList.add('done'); numEl.textContent = '✓'; card.classList.add('answered'); }
+    else { numEl.classList.remove('done'); numEl.textContent = qi+1; card.classList.remove('answered'); }
+    updateProgress();
+  });
+}
+
+function updateProgress() {
+  var answered = Object.keys(answers).length;
+  var pct = Math.round(answered / questions.length * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = answered + ' z ' + questions.length + ' otázek / ' + answered + ' of ' + questions.length + ' questions';
+  document.getElementById('progressPct').textContent = pct + ' %';
+  var btn = document.getElementById('submitBtn');
+  var hint = document.getElementById('submitHint');
+  if (answered >= questions.length) { btn.classList.add('ready'); hint.style.display = 'none'; }
+  else { btn.classList.remove('ready'); hint.style.display = 'block'; }
+}
+
+function evaluate() {
+  var answered = Object.keys(answers).length;
+  if (answered < questions.length) return;
+  var counts = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+  var keys = Object.keys(answers);
+  for (var i = 0; i < keys.length; i++) {
+    answers[keys[i]].forEach(function(l) { if (counts[l] !== undefined) counts[l]++; });
+  }
+  var max = Math.max(counts.A, counts.B, counts.C, counts.D, counts.E);
+  var winners = Object.keys(counts).filter(function(k) { return counts[k] === max; });
+  var tallyHtml = Object.keys(counts).map(function(l) {
+    return '<span class="tally-badge ' + (winners.indexOf(l) >= 0 ? 'winner' : '') + '">' + l + ': ' + counts[l] + '</span>';
+  }).join('');
+  document.getElementById('tallyRow').innerHTML = tallyHtml;
+  var body = '';
+  if (winners.length >= 3) { body = buildSingleResult('mixed'); }
+  else if (winners.length === 2) { body = buildTieResult(winners); }
+  else { body = buildSingleResult(winners[0]); }
+  document.getElementById('resultBody').innerHTML = body;
+  var rc = document.getElementById('resultCard');
+  rc.classList.add('show');
+  rc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.getElementById('submitBtn').addEventListener('click', evaluate);
+document.getElementById('restartBtn').addEventListener('click', function() {
+  var keys = Object.keys(answers);
+  for (var i = 0; i < keys.length; i++) delete answers[keys[i]];
+  document.getElementById('resultCard').classList.remove('show');
+  updateProgress();
+  renderQuestions();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+renderQuestions();
+updateProgress();
+</script>
+</body>
+</html>
